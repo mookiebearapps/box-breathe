@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calm Breathing: Box Breath - Mookiebearapps</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        teal: {
+                            400: '#38bdf8',
+                            500: '#14b8a6',
+                            900: '#134e4a',
+                        },
+                        emerald: {
+                            400: '#34d399',
+                            500: '#10b981',
+                        },
+                        indigo: {
+                            900: '#1e1b4b',
+                            950: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        /* Ambient glowing pulse effects */
+        .glow-effect {
+            box-shadow: 0 0 60px 15px rgba(20, 184, 166, 0.25), 0 0 100px 30px rgba(56, 189, 248, 0.15);
+        }
+
+        .glow-effect-hold {
+            box-shadow: 0 0 70px 20px rgba(168, 85, 247, 0.3), 0 0 110px 35px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Smooth circle scaling transitions */
+        .breath-circle {
+            transition: transform linear, box-shadow 0.8s ease-in-out, background-color 0.8s ease-in-out;
+            will-change: transform;
+        }
+
+        /* SVG progress dash animation */
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.1s linear, stroke 0.8s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Background ambient floating dots */
+        .bg-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.1); }
+        }
+    </style>
+</head>
+<body class="h-full w-full bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-hidden select-none">
+
+    <!-- Background Ambient Layer -->
+    <div id="ambient-bg" class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="bg-particle bg-teal-500 w-96 h-96 -top-20 -left-20 blur-3xl opacity-20"></div>
+        <div class="bg-particle bg-indigo-600 w-96 h-96 -bottom-20 -right-20 blur-3xl opacity-20" style="animation-delay: -5s;"></div>
+        <div class="bg-particle bg-purple-600 w-80 h-80 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-10" style="animation-delay: -10s;"></div>
+    </div>
+
+    <!-- Header Navigation Bar -->
+    <header class="relative z-10 w-full px-6 py-5 flex items-center justify-between max-w-4xl mx-auto">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v18m9-9H3" />
+                </svg>
+            </div>
+            <div>
+                <span class="font-medium text-lg tracking-wide text-slate-200 block leading-none">Calm Breathing</span>
+                <span class="text-[10px] text-teal-400/80 tracking-wider font-semibold uppercase">Mookiebearapps</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <!-- Screen Wake Lock Status Badge -->
+            <div id="wakelock-status" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/80 text-slate-400 border border-slate-800">
+                <span id="wakelock-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span id="wakelock-text">WakeLock Idle</span>
+            </div>
+
+            <!-- Settings Button -->
+            <button id="open-settings-btn" class="p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all duration-200 active:scale-95" title="Settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main id="breathing-stage" class="relative z-10 flex-1 flex flex-col items-center justify-center cursor-pointer px-4">
+        
+        <!-- Interactive Circle Stage Container -->
+        <div class="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 flex items-center justify-center">
+            
+            <!-- Animated SVG Progress Ring -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none transform -rotate-90">
+                <!-- Outer Base Track -->
+                <circle
+                    cx="50%" cy="50%" r="44%"
+                    class="stroke-slate-800/60"
+                    stroke-width="4"
+                    fill="transparent"
+                />
+                <!-- Active Phase Circle -->
+                <circle
+                    id="progress-ring"
+                    cx="50%" cy="50%" r="44%"
+                    class="progress-ring-circle stroke-teal-400"
+                    stroke-width="5"
+                    stroke-dasharray="0 1000"
+                    stroke-dashoffset="0"
+                    stroke-linecap="round"
+                    fill="transparent"
+                />
+            </svg>
+
+            <!-- Static Guide Ring -->
+            <div id="outer-ring" class="absolute inset-4 rounded-full border border-teal-500/20 transition-all duration-700 pointer-events-none"></div>
+
+            <!-- Expanding / Shrinking Central Breathing Circle -->
+            <div id="breath-circle" class="breath-circle w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-400 flex flex-col items-center justify-center text-center p-4 glow-effect transform scale-100">
+                <span id="phase-label" class="text-2xl sm:text-3xl font-medium tracking-wider text-slate-950 transition-opacity duration-300">
+                    Ready
+                </span>
+                <span id="timer-label" class="text-3xl sm:text-4xl font-bold text-slate-950/90 mt-1">
+                    4
+                </span>
+            </div>
+        </div>
+
+        <!-- Tap-to-Exit Prompt -->
+        <div id="touch-hint" class="mt-10 text-center transition-all duration-500">
+            <p id="hint-text" class="text-slate-400 text-sm sm:text-base font-light tracking-wide bg-slate-900/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-slate-800 shadow-lg inline-flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                <span>Tap anywhere to start breathing session</span>
+            </p>
+        </div>
+    </main>
+
+    <footer class="relative z-10 w-full px-6 py-6 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-slate-400 border-t border-slate-900/80 gap-4">
+        <div class="flex items-center space-x-6">
+            <div class="flex flex-col">
+                <span class="text-slate-500 text-xs">Completed Cycles</span>
+                <span id="cycle-count" class="text-slate-200 font-semibold text-base">0</span>
+            </div>
+            <div class="h-8 w-px bg-slate-800"></div>
+            <div class="flex flex-col">
+                <span class="text-slate-500 text-xs">Total Session Time</span>
+                <span id="session-time" class="text-slate-200 font-semibold text-base">00:00</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <span id="pattern-badge" class="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-mono">
+                Pattern: 4s - 4s - 4s - 4s
+            </span>
+        </div>
+    </footer>
+
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-panel w-full max-w-md rounded-2xl p-6 sm:p-8 text-slate-100 shadow-2xl border border-slate-800 transform scale-95 transition-all duration-300" id="settings-modal-card">
+            
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <h2 class="text-xl font-semibold tracking-wide flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span>Session Settings</span>
+                </h2>
+                <button id="close-settings-btn" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mt-6 space-y-6">
+                <!-- Rhythm Preset Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Phase Duration (Inhale / Hold / Exhale / Hold)</label>
+                    <div class="grid grid-cols-4 gap-2" id="pattern-options">
+                        <button data-seconds="3" class="pattern-btn py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-sm hover:border-teal-500 transition">
+                            3s
+                        </button>
+                        <button data-seconds="4" class="pattern-btn py-2.5 rounded-xl border border-teal-500 bg-teal-500/10 text-teal-300 font-medium text-sm transition">
+                            4s
+                        </button>
+                        <button data-seconds="5" class="pattern-btn py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-sm hover:border-teal-500 transition">
+                            5s
+                        </button>
+                        <button data-seconds="6" class="pattern-btn py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 font-medium text-sm hover:border-teal-500 transition">
+                            6s
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Voice MP3 Toggle -->
+                <div class="flex items-center justify-between py-2 border-t border-slate-800/80">
+                    <div>
+                        <div class="font-medium text-sm text-slate-200">MP3 Voice Prompts</div>
+                        <div class="text-xs text-slate-400">Plays inhale.mp3, hold.mp3, exhale.mp3</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="mp3-voice-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    </label>
+                </div>
+
+                <!-- Soft Bell / Chime Toggle -->
+                <div class="flex items-center justify-between py-2 border-t border-slate-800/80">
+                    <div>
+                        <div class="font-medium text-sm text-slate-200">Phase Transition Chime</div>
+                        <div class="text-xs text-slate-400">Soft audio tone at each step</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="chime-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    </label>
+                </div>
+
+                <!-- Screen Wake Lock Details -->
+                <div class="flex items-center justify-between py-2 border-t border-slate-800/80">
+                    <div>
+                        <div class="font-medium text-sm text-slate-200">Screen Wake Lock</div>
+                        <div class="text-xs text-slate-400">Keeps display active during session</div>
+                    </div>
+                    <span class="text-xs px-2.5 py-1 rounded bg-teal-500/10 text-teal-400 font-mono">Automatic</span>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <button id="save-settings-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 font-semibold shadow-lg shadow-teal-500/20 hover:opacity-95 active:scale-[0.98] transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // UI Element References
+            const stage = document.getElementById('breathing-stage');
+            const breathCircle = document.getElementById('breath-circle');
+            const phaseLabel = document.getElementById('phase-label');
+            const timerLabel = document.getElementById('timer-label');
+            const hintText = document.getElementById('hint-text');
+            const cycleCountEl = document.getElementById('cycle-count');
+            const sessionTimeEl = document.getElementById('session-time');
+            const patternBadge = document.getElementById('pattern-badge');
+
+            // Settings UI Elements
+            const openSettingsBtn = document.getElementById('open-settings-btn');
+            const closeSettingsBtn = document.getElementById('close-settings-btn');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsModalCard = document.getElementById('settings-modal-card');
+            const patternBtns = document.querySelectorAll('.pattern-btn');
+            const mp3VoiceToggle = document.getElementById('mp3-voice-toggle');
+            const chimeToggle = document.getElementById('chime-toggle');
+
+            // Wake Lock UI Elements
+            const wakelockStatus = document.getElementById('wakelock-status');
+            const wakelockDot = document.getElementById('wakelock-dot');
+            const wakelockText = document.getElementById('wakelock-text');
+
+            // SVG Progress Ring Reference
+            const progressRing = document.getElementById('progress-ring');
+            const circumference = 2 * Math.PI * 100; // Calculated path size
+            progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+            progressRing.style.strokeDashoffset = circumference;
+
+            // Audio Objects Setup for Custom MP3 Prompts
+            const voiceAudios = {
+                inhale: new Audio('inhale.mp3'),
+                exhale: new Audio('exhale.mp3'),
+                hold: new Audio('hold.mp3')
+            };
+
+            // Preload MP3 files
+            Object.values(voiceAudios).forEach(audio => {
+                audio.preload = 'auto';
+            });
+
+            // Application State
+            let isActive = false;
+            let phaseIndex = 0; // 0: Inhale, 1: Hold, 2: Exhale, 3: Hold
+            let phaseDuration = 4; // default seconds
+            let secondsRemaining = 4;
+            let totalCycles = 0;
+            let sessionSeconds = 0;
+
+            // Timer References
+            let phaseInterval = null;
+            let totalTimerInterval = null;
+            let wakeLock = null;
+
+            // Box Breathing Phase Configurations
+            const phases = [
+                { id: 'inhale', name: 'Inhale', scale: 'scale-[1.85] sm:scale-[2.1]', color: 'from-teal-400 to-cyan-300', ringColor: 'stroke-teal-400' },
+                { id: 'hold', name: 'Hold', scale: 'scale-[1.85] sm:scale-[2.1]', color: 'from-indigo-400 to-purple-400', ringColor: 'stroke-indigo-400' },
+                { id: 'exhale', name: 'Exhale', scale: 'scale-100', color: 'from-cyan-500 to-blue-600', ringColor: 'stroke-blue-400' },
+                { id: 'hold', name: 'Hold', scale: 'scale-100', color: 'from-slate-600 to-slate-700', ringColor: 'stroke-slate-500' }
+            ];
+
+            // Web Audio Synthesizer Engine for Soft Phase Chime
+            let audioCtx = null;
+
+            function initAudioContext() {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        audioCtx = new AudioContext();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+
+            function playSoftChime(frequency = 440) {
+                if (!chimeToggle.checked) return;
+                try {
+                    initAudioContext();
+                    if (!audioCtx) return;
+
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 1.25);
+                } catch (e) {
+                    console.warn('Audio chime playback error:', e);
+                }
+            }
+
+            // Play MP3 Voice Prompt with fallback speech synth
+            function playVoicePrompt(phaseId, name) {
+                if (!mp3VoiceToggle.checked) return;
+
+                const audioElement = voiceAudios[phaseId];
+                if (audioElement) {
+                    audioElement.currentTime = 0;
+                    audioElement.play().catch(err => {
+                        console.warn(`Local ${phaseId}.mp3 not available or blocked, using speech fallback.`);
+                        speakFallback(name);
+                    });
+                } else {
+                    speakFallback(name);
+                }
+            }
+
+            function speakFallback(text) {
+                if (!('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // Screen Wake Lock Handler
+            async function requestWakeLock() {
+                if ('wakeLock' in navigator) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        updateWakeLockUI(true);
+                        wakeLock.addEventListener('release', () => {
+                            updateWakeLockUI(false);
+                        });
+                    } catch (err) {
+                        console.log(`Wake Lock Error: ${err.message}`);
+                        updateWakeLockUI(false);
+                    }
+                }
+            }
+
+            function releaseWakeLock() {
+                if (wakeLock !== null) {
+                    wakeLock.release();
+                    wakeLock = null;
+                }
+                updateWakeLockUI(false);
+            }
+
+            function updateWakeLockUI(active) {
+                if (active) {
+                    wakelockStatus.classList.remove('hidden');
+                    wakelockDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                    wakelockText.textContent = 'WakeLock Active';
+                    wakelockStatus.classList.add('border-emerald-500/30', 'text-slate-300');
+                } else {
+                    wakelockDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+                    wakelockText.textContent = 'WakeLock Off';
+                    wakelockStatus.classList.remove('border-emerald-500/30', 'text-slate-300');
+                }
+            }
+
+            // Re-acquire wake lock if page regains visibility
+            document.addEventListener('visibilitychange', async () => {
+                if (wakeLock !== null && document.visibilityState === 'visible' && isActive) {
+                    await requestWakeLock();
+                }
+            });
+
+            // Start Session
+            function startSession() {
+                isActive = true;
+                initAudioContext();
+                requestWakeLock();
+
+                hintText.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>Tap anywhere to stop / exit</span>
+                `;
+
+                phaseIndex = 0;
+                secondsRemaining = phaseDuration;
+                
+                startTotalTimer();
+                runPhaseCycle();
+            }
+
+            // Stop / Pause Session
+            function stopSession() {
+                isActive = false;
+                clearInterval(phaseInterval);
+                clearInterval(totalTimerInterval);
+                releaseWakeLock();
+
+                // Stop active voice audio
+                Object.values(voiceAudios).forEach(a => {
+                    a.pause();
+                    a.currentTime = 0;
+                });
+
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+
+                // Reset visual state
+                breathCircle.className = 'breath-circle w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-400 flex flex-col items-center justify-center text-center p-4 glow-effect transform scale-100';
+                phaseLabel.textContent = 'Stopped';
+                timerLabel.textContent = phaseDuration;
+                
+                progressRing.style.strokeDashoffset = circumference;
+
+                hintText.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+                    <span>Tap anywhere to start breathing session</span>
+                `;
+            }
+
+            // Phase Loop Handler
+            function runPhaseCycle() {
+                if (!isActive) return;
+
+                const currentPhase = phases[phaseIndex];
+                
+                phaseLabel.textContent = currentPhase.name;
+                timerLabel.textContent = secondsRemaining;
+
+                // Trigger Audio & Chime
+                playVoicePrompt(currentPhase.id, currentPhase.name);
+                
+                const freqs = [528, 440, 396, 352];
+                playSoftChime(freqs[phaseIndex]);
+
+                // Apply Smooth CSS Transition
+                breathCircle.style.transitionDuration = `${phaseDuration}s`;
+                breathCircle.className = `breath-circle w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr ${currentPhase.color} flex flex-col items-center justify-center text-center p-4 ${phaseIndex === 1 || phaseIndex === 3 ? 'glow-effect-hold' : 'glow-effect'} transform ${currentPhase.scale}`;
+
+                progressRing.className = `progress-ring-circle ${currentPhase.ringColor}`;
+
+                let elapsed = 0;
+                const totalSteps = phaseDuration * 10;
+                
+                clearInterval(phaseInterval);
+                phaseInterval = setInterval(() => {
+                    if (!isActive) return;
+
+                    elapsed++;
+                    const progress = elapsed / totalSteps;
+                    const offset = circumference - (progress * circumference);
+                    progressRing.style.strokeDashoffset = offset;
+
+                    const newSeconds = Math.max(1, Math.ceil(phaseDuration - (elapsed / 10)));
+                    if (newSeconds !== secondsRemaining) {
+                        secondsRemaining = newSeconds;
+                        timerLabel.textContent = secondsRemaining;
+                    }
+
+                    if (elapsed >= totalSteps) {
+                        clearInterval(phaseInterval);
+                        advancePhase();
+                    }
+                }, 100);
+            }
+
+            // Advance Phase Index
+            function advancePhase() {
+                phaseIndex = (phaseIndex + 1) % 4;
+                secondsRemaining = phaseDuration;
+
+                if (phaseIndex === 0) {
+                    totalCycles++;
+                    cycleCountEl.textContent = totalCycles;
+                }
+
+                runPhaseCycle();
+            }
+
+            // Total Elapsed Time Timer
+            function startTotalTimer() {
+                clearInterval(totalTimerInterval);
+                totalTimerInterval = setInterval(() => {
+                    if (isActive) {
+                        sessionSeconds++;
+                        const mins = Math.floor(sessionSeconds / 60).toString().padStart(2, '0');
+                        const secs = (sessionSeconds % 60).toString().padStart(2, '0');
+                        sessionTimeEl.textContent = `${mins}:${secs}`;
+                    }
+                }, 1000);
+            }
+
+            // Tap Stage Event Listener
+            stage.addEventListener('click', () => {
+                if (settingsModal.classList.contains('opacity-100')) return;
+
+                if (!isActive) {
+                    startSession();
+                } else {
+                    stopSession();
+                }
+            });
+
+            // Settings Modal Handlers
+            openSettingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isActive) stopSession();
+                
+                settingsModal.classList.remove('pointer-events-none', 'opacity-0');
+                settingsModal.classList.add('opacity-100');
+                settingsModalCard.classList.remove('scale-95');
+                settingsModalCard.classList.add('scale-100');
+            });
+
+            function hideSettings() {
+                settingsModal.classList.add('pointer-events-none', 'opacity-0');
+                settingsModal.classList.remove('opacity-100');
+                settingsModalCard.classList.add('scale-95');
+                settingsModalCard.classList.remove('scale-100');
+            }
+
+            closeSettingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                hideSettings();
+            });
+
+            saveSettingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                hideSettings();
+            });
+
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) hideSettings();
+            });
+
+            // Rhythm Selector
+            patternBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    patternBtns.forEach(b => {
+                        b.classList.remove('border-teal-500', 'bg-teal-500/10', 'text-teal-300');
+                        b.classList.add('border-slate-700', 'bg-slate-900', 'text-slate-300');
+                    });
+
+                    btn.classList.remove('border-slate-700', 'bg-slate-900', 'text-slate-300');
+                    btn.classList.add('border-teal-500', 'bg-teal-500/10', 'text-teal-300');
+
+                    phaseDuration = parseInt(btn.dataset.seconds, 10);
+                    secondsRemaining = phaseDuration;
+                    timerLabel.textContent = phaseDuration;
+                    patternBadge.textContent = `Pattern: ${phaseDuration}s - ${phaseDuration}s - ${phaseDuration}s - ${phaseDuration}s`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
